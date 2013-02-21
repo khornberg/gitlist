@@ -20,9 +20,16 @@
     <table class="tree">
         <thead>
             <tr>
-                <th width="80%">name</th>
-                <th width="10%">mode</th>
-                <th width="10%">size</th>
+                {% if bare == "false" %}                    
+                    <th width="75%">name</th>
+                    <th width="10%">mode</th>
+                    <th width="10%">size</th>
+                    <th width="5%">edit</th>
+                {% else %}
+                    <th width="80%">name</th>
+                    <th width="10%">mode</th>
+                    <th width="10%">size</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -37,6 +44,9 @@
                 </td>
                 <td></td>
                 <td></td>
+                {% if bare == "false" %}
+                    <td></td>
+                {% endif %}
             </tr>
             {% endif %}
             {% for file in files %}
@@ -50,6 +60,13 @@
                 ">{{ file.name }}</a></td>
                 <td>{{ file.mode }}</td>
                 <td>{% if file.size %}{{ (file.size / 1024) | number_format }} kb{% endif %}</td>
+                {% if bare == "false" %}
+                    <td><a href="
+                        {%- if file.type == "blob" and file.writeable == "true" -%}                       
+                            {{ path('blob_edit', {repo: repo, branch: branch, file: path ~ (file.type == "symlink" ? file.path : file.name)}) }}
+                        {%- endif -%}
+                    "><i class="{{ file.type == "blob" and file.writeable == "true" ? "icon-edit" : "icon-spaced" }}"></i></a></td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>

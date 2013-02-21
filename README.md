@@ -58,11 +58,14 @@ That's it, installation complete! If you're having problems, check this [tutoria
 ## Building
 GitList uses [Composer](http://getcomposer.org/) to manage dependencies and [Ant](http://ant.apache.org/) to build the project. In order to run all the targets in the build script, you will need [PHPUnit](http://www.phpunit.de/), [phpcpd](https://github.com/sebastianbergmann/phpcpd), [phploc](https://github.com/sebastianbergmann/phploc), [PHPMD](http://phpmd.org/) and [PHP_Depend](http://pdepend.org).
 
+Easily get all the PHP dependencies by installing
+[phpqatools](http://phpqatools.org). 
+
 Once you have all the dependencies set, you can clone the repository and run Ant:
 
 ```
 git clone https://github.com/klaussilveira/gitlist.git
-ant
+:ant
 ```
 
 If you just want to get the project dependencies, instead of building everything:

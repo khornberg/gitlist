@@ -80,7 +80,7 @@ class BlobController implements ControllerProviderInterface
           ->assert('branch', '[\w-._\/]+')
           ->bind('blob_raw');
 
-                  //Edit route
+        //Edit route
         $route->get('{repo}/edit/{branch}/{file}', function($repo, $branch, $file) use ($app) {
             $repository = $app['git']->getRepository($app['git.repos'] . $repo);
             $blob = $repository->getBlob("$branch:\"$file\"");
@@ -135,11 +135,13 @@ class BlobController implements ControllerProviderInterface
 
                 /* Directly write file from glip
                 *  http://fimml.at/glip
+                *  Writes the modified data as the same file name in the working directory. 
+                *  Any change will completely rewrite the file so line level changes are not shown as this time.
                 */
-                $f = fopen($sourceFilePath, 'w');
-                flock($f, LOCK_EX);
-                fwrite($f, $data);
-                fclose($f);
+                $modified_file = fopen($sourceFilePath, 'w');
+                flock($modified_file, LOCK_EX);
+                fwrite($modified_file, $data);
+                fclose($modified_file);
 
                 $repository->add($file);
 

@@ -13,6 +13,11 @@
 
             <div class="btn-group pull-right">
                 <a href="{{ path('blob_raw', {repo: repo, commitishPath: branch ~ '/' ~ file}) }}" class="btn btn-small"><i class="icon-file"></i> Raw</a>
+
+                {% if bare == "false" and writeable == "true" %}
+                    <a href="{{ path('blob_edit', {repo: repo, commitishPath: branch ~ '/' ~ file}) }}" class="btn btn-small"><i class="icon-edit"></i> Edit</a>
+                {% endif %}
+
                 <a href="{{ path('blame', {repo: repo, commitishPath: branch ~ '/' ~ file}) }}" class="btn btn-small"><i class="icon-bullhorn"></i> Blame</a>
                 <a href="{{ path('commits', {repo: repo, commitishPath: branch ~ '/' ~ file}) }}" class="btn btn-small"><i class="icon-list-alt"></i> History</a>
             </div>

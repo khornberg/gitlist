@@ -19,6 +19,9 @@ default_branch = 'master' ; Default branch when HEAD is detached
 ; You can hide repositories from GitList, just copy this for each repository you want to hide
 ; hidden[] = '/var/www/projects/BetaTest'
 
+; You can enable or disable the code editor and web commits
+editor = false
+
 [app]
 debug = false
 

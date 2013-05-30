@@ -53,6 +53,7 @@ class Application extends SilexApplication
             'git.hidden'      => $config->get('git', 'hidden') ?
                                  $config->get('git', 'hidden') : array(),
             'git.default_branch' => $config->get('git', 'default_branch') ? $config->get('git', 'default_branch') : 'master',
+            'git.editor'      => $config->get('git', 'editor'),
         ));
 
         $this->register(new ViewUtilServiceProvider());

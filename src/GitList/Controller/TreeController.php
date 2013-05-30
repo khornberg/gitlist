@@ -4,6 +4,8 @@ namespace GitList\Controller;
 
 use Silex\Application;
 use Silex\ControllerProviderInterface;
+use Silex\ControllerCollection;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -32,6 +34,13 @@ class TreeController implements ControllerProviderInterface
                 $parent = '';
             }
 
+            if($app['git.editor']) {
+                $bare = $repository->getConfig("core.bare");
+            }
+            else {
+                $bare = "true";
+            }
+
             return $app['twig']->render('tree.twig', array(
                 'files'          => $files->output(),
                 'repo'           => $repo,
@@ -42,6 +51,7 @@ class TreeController implements ControllerProviderInterface
                 'branches'       => $repository->getBranches(),
                 'tags'           => $repository->getTags(),
                 'readme'         => $app['util.repository']->getReadme($repository, $branch),
+                'bare'           => $bare,
             ));
         })->assert('repo', $app['util.routing']->getRepositoryRegex())
           ->assert('commitishPath', $app['util.routing']->getCommitishPathRegex())

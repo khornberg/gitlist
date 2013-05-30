@@ -25,6 +25,47 @@ $(function () {
         $('#md-content').html(converter.makeHtml($('#md-content').text()));
     }
 
+    //CodeMirror as an editor
+    if ($('#sourcecode_edit').length) {
+        var value = $('#sourcecode_edit').text();
+        var mode = $('#sourcecode_edit').attr('language');
+        var pre = $('#sourcecode_edit').get(0);
+
+        //Differentiate modes for codefolding option
+        var rangeFinder = null;
+        if (mode == "text" || mode == "markdown") {
+            foldFunc = null;
+        }
+        else if (mode == "html" || mode == "xml") {
+            foldFunc = CodeMirror.newFoldFunction(CodeMirror.tagRangeFinder);
+        }
+        else {
+            foldFunc = CodeMirror.newFoldFunction(CodeMirror.braceRangeFinder);           
+        }
+
+        /* CodeMirror Initiation and Options 
+        *  Codefolding and highlighting of selected text are enabled
+        *  Addeds keyboard shortcut Ctrl-Q for codefolding
+        */
+        var editor = CodeMirror.fromTextArea(pre
+        , {
+            value: value,
+            lineNumbers: true,
+            matchBrackets: true,
+            lineWrapping: true,
+            mode: mode,
+            autofocus: true,
+            onGutterClick: foldFunc,
+            extraKeys: {"Ctrl-Q": function(cm){foldFunc(cm, cm.getCursor().line);}},
+            onCursorActivity: function() {
+                editor.matchHighlight("CodeMirror-matchhighlight");
+            },
+            lineNumberFormatter: function(ln) {
+                return '<a name="L'+ ln +'"></a><a href="#L'+ ln +'">'+ ln +'</a>';
+            }
+        });
+    }
+
     function paginate() {
         var $pager = $('.pager');
 

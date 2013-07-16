@@ -15,7 +15,7 @@ class BlobController implements ControllerProviderInterface
         $route = $app['controllers_factory'];
 
         $route->get('{repo}/blob/{commitishPath}', function ($repo, $commitishPath) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'], $repo);
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
 
             list($branch, $file) = $app['util.routing']
                 ->parseCommitishPathParam($commitishPath, $repo);
@@ -63,7 +63,7 @@ class BlobController implements ControllerProviderInterface
           ->bind('blob');
 
         $route->get('{repo}/raw/{commitishPath}', function ($repo, $commitishPath) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'], $repo);
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
 
             list($branch, $file) = $app['util.routing']
                 ->parseCommitishPathParam($commitishPath, $repo);

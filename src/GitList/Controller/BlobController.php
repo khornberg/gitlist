@@ -4,9 +4,7 @@ namespace GitList\Controller;
 
 use Silex\Application;
 use Silex\ControllerProviderInterface;
-use Silex\ControllerCollection;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Filesystem\Filesystem;
 
 class BlobController implements ControllerProviderInterface
 {
@@ -26,18 +24,9 @@ class BlobController implements ControllerProviderInterface
             $breadcrumbs = $app['util.view']->getBreadcrumbs($file);
             $fileType = $app['util.repository']->getFileType($file);
 
-            if($app['git.editor']) {
-                $bare = $repository->getConfig("core.bare");
-            }
-            else {
-                $bare = "true";
-            }
-
-            $sourceFilePath = $repository->getPath().DIRECTORY_SEPARATOR.$file;
-            $writeable = false;
-            if(is_writeable($sourceFilePath)) {
-                $writeable = true;
-            }
+            $bare = ($app['git.editor']) ? $repository->getConfig("core.bare") : $bare = "true";
+            $sourceFilePath = $repository->getPath().$file;
+            $writeable = (is_writeable($sourceFilePath)) ? true :false;
 
             if ($fileType !== 'image' && $app['util.repository']->isBinary($file)) {
                 return $app->redirect($app['url_generator']->generate('blob_raw', array(
@@ -86,19 +75,19 @@ class BlobController implements ControllerProviderInterface
           ->bind('blob_raw');
 
         //Edit route
-        $route->get('{repo}/edit/{branch}/{file}', function($repo, $branch, $file) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'] . $repo);
+        $route->get('{repo}/edit/{commitishPath}', function ($repo, $commitishPath) use ($app) {
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
+
+            list($branch, $file) = $app['util.routing']
+                ->parseCommitishPathParam($commitishPath, $repo);
+
+            list($branch, $file) = $app['util.repository']->extractRef($repository, $branch, $file);
+
             $blob = $repository->getBlob("$branch:\"$file\"");
             $breadcrumbs = $app['util.view']->getBreadcrumbs($file);
             $fileType = $app['util.repository']->getFileType($file);
 
-            if($app['git.editor']) {
-                $bare = $repository->getConfig("core.bare");
-            }
-            else {
-                $bare = "true";
-            }
-
+            $bare = ($app['git.editor']) ? $repository->getConfig("core.bare") : $bare = "true";
             $message = null;
 
             return $app['twig']->render('edit.twig', array(
@@ -113,40 +102,60 @@ class BlobController implements ControllerProviderInterface
                 'bare'           => $bare,
                 'message'        => $message,
             ));
-        })->assert('file', '.+')
-          ->assert('repo', $app['util.routing']->getRepositoryRegex())
-          ->assert('branch', '[\w-._\/]+')
+        })->assert('repo', $app['util.routing']->getRepositoryRegex())
+          ->assert('commitishPath', '.+')
           ->bind('blob_edit');
 
         //Commit route
-        $route->post('{repo}/commit/{branch}/{file}', function($repo, $branch, $file) use ($app) {
-            $repository = $app['git']->getRepository($app['git.repos'] . $repo);
+        $route->post('{repo}/commit/{commitishPath}', function ($repo, $commitishPath) use ($app) {
+            $repository = $app['git']->getRepositoryFromName($app['git.repos'], $repo);
+
+            list($branch, $file) = $app['util.routing']
+                ->parseCommitishPathParam($commitishPath, $repo);
+
+            list($branch, $file) = $app['util.repository']->extractRef($repository, $branch, $file);
+
             $blob = $repository->getBlob("$branch:\"$file\"");
             $breadcrumbs = $app['util.view']->getBreadcrumbs($file);
             $fileType = $app['util.repository']->getFileType($file);
 
-            if($app['git.editor']) {
-                $bare = $repository->getConfig("core.bare");
-            }
-            else {
-                $bare = "true";
-            }
+            $bare = ($app['git.editor']) ? $repository->getConfig("core.bare") : $bare = "true";
 
-            $sourceFilePath = $repository->getPath().DIRECTORY_SEPARATOR.$file;
+            $sourceFilePath = $repository->getPath();
+            $sourceFile = file_get_contents($repository->getPath().DIRECTORY_SEPARATOR.$file);
 
-            if(is_writeable($sourceFilePath)) {
+            if (is_writeable($sourceFilePath)) {
                 $data = $_POST['sourcecode_edit'];
                 $commit_message = $_POST['commit_message'];
 
                 /* Directly write file from glip
                 *  http://fimml.at/glip
-                *  Writes the modified data as the same file name in the working directory. 
+                *  Writes the modified data as the same file name in the working directory.
                 *  Any change will completely rewrite the file so line level changes are not shown as this time.
                 */
-                $modified_file = fopen($sourceFilePath, 'w');
-                flock($modified_file, LOCK_EX);
-                fwrite($modified_file, $data);
-                fclose($modified_file);
+                // $modified_file = fopen($sourceFilePath, 'w');
+                // flock($modified_file, LOCK_EX);
+                // fwrite($modified_file, $data);
+                // fclose($modified_file);
+
+
+                /* Uses UnifiedDiffPatcher and Diff-Match-Patch
+                * Check functions to make sure they are the correct names and are passed the necessary vars
+                * Check processPatch to see what file it will write to
+                * Handle errors with GitList builtin
+                * Write tests to check this and the other edits for GitList and Gitter (not sure how)
+                */
+
+                $dmp = new DiffMatchPatch\DiffMatchPatch();
+                $diff = $dmp->diff_match($data, $sourceFile, false);
+                $patch = $dmp->patch_make($diff);
+
+                file_put_contents($repository->getPath().$file."patch", $patch);
+                $patchFile = $sourceFilePath."patch";
+                $udp = new UnifiedDiffPatcher\UnifiedDiffPatcher();
+                $udp->validatePatch($patchFile);
+                $udp->processPatch($patchFile);
+
 
                 $repository->add($file);
 
@@ -170,12 +179,10 @@ class BlobController implements ControllerProviderInterface
                 'bare'           => $bare,
                 'message'        => $message,
             ));
-        })->assert('file', '.+')
-          ->assert('repo', $app['util.routing']->getRepositoryRegex())
-          ->assert('branch', '[\w-._\/]+')
+        })->assert('repo', $app['util.routing']->getRepositoryRegex())
+          ->assert('commitishPath', '.+')
           ->bind('blob_commit');
 
         return $route;
     }
 }
-

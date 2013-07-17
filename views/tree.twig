@@ -64,7 +64,7 @@
                 {% if bare == "false" %}
                     <td><a href="
                         {%- if file.type == "blob" and file.writeable == "true" -%}                       
-                            {{ path('blob_edit', {repo: repo, branch: branch, file: path ~ (file.type == "symlink" ? file.path : file.name)}) }}
+                            {{ path('blob_edit', {repo: repo, commitishPath: branch ~ '/' ~ path ~ (file.type == "symlink" ? file.path : file.name)}) }}
                         {%- endif -%}
                     "><i class="{{ file.type == "blob" and file.writeable == "true" ? "icon-edit" : "icon-spaced" }}"></i></a></td>
                 {% endif %}
